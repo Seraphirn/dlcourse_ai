@@ -2,6 +2,7 @@ import numpy as np
 from scipy.stats import mode
 from scipy.spatial.distance import cdist
 
+
 class KNN:
     """
     K-neariest-neighbor classifier using L1 loss
@@ -116,10 +117,10 @@ class KNN:
         pred, np array of bool (num_test_samples) - binary predictions
            for every test sample
         '''
-        args_of_k_near = np.argpartition(dists, kth=self.k, axis=1)[:,:self.k]
+        args_of_k_near = np.argpartition(dists, kth=self.k, axis=1)[:, :self.k]
         labels_of_k_near = self.train_y[args_of_k_near]
         predicts = np.array(mode(labels_of_k_near, axis=1),
-                            np.bool)[0,:].flatten()
+                            np.bool)[0, :].flatten()
         return predicts
 
     def predict_labels_multiclass(self, dists):
@@ -135,8 +136,8 @@ class KNN:
            for every test sample
         '''
 
-        args_of_k_near = np.argpartition(dists, kth=self.k, axis=1)[:,:self.k]
+        args_of_k_near = np.argpartition(dists, kth=self.k, axis=1)[:, :self.k]
         labels_of_k_near = self.train_y[args_of_k_near]
-        predicts = np.array(mode(labels_of_k_near, axis=1))[0,:].flatten()
+        predicts = np.array(mode(labels_of_k_near, axis=1))[0, :].flatten()
 
         return predicts
