@@ -59,10 +59,10 @@ def prepare_for_linear_classifier(train_X, test_X):
 
     # Add another channel with ones as a bias term
     train_flat_with_ones = np.hstack([train_flat, np.ones((train_X.shape[0], 1))])
-    test_flat_with_ones = np.hstack([test_flat, np.ones((test_X.shape[0], 1))])    
+    test_flat_with_ones = np.hstack([test_flat, np.ones((test_X.shape[0], 1))])
     return train_flat_with_ones, test_flat_with_ones
 
-train_X, train_y, test_X, test_y = load_svhn("data", max_train=10000, max_test=1000)    
+train_X, train_y, test_X, test_y = load_svhn("data", max_train=10000, max_test=1000)
 train_X, test_X = prepare_for_linear_classifier(train_X, test_X)
 # Split train into train and val
 train_X, train_y, val_X, val_y = random_split_train_val(train_X, train_y, num_val = 1000)
@@ -72,21 +72,21 @@ train_X, train_y, val_X, val_y = random_split_train_val(train_X, train_y, num_va
 
 В этом курсе мы будем писать много функций, которые вычисляют градиенты аналитическим методом.
 
-Все функции, в которых мы будем вычислять градиенты, будут написаны по одной и той же схеме.  
+Все функции, в которых мы будем вычислять градиенты, будут написаны по одной и той же схеме.
 Они будут получать на вход точку, где нужно вычислить значение и градиент функции, а на выходе будут выдавать кортеж (tuple) из двух значений - собственно значения функции в этой точке (всегда одно число) и аналитического значения градиента в той же точке (той же размерности, что и вход).
 ```
 def f(x):
     """
     Computes function and analytic gradient at x
-    
+
     x: np array of float, input to the function
-    
+
     Returns:
-    value: float, value of the function 
+    value: float, value of the function
     grad: np array of float, same shape as x
     """
     ...
-    
+
     return value, grad
 ```
 

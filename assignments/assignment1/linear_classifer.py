@@ -13,9 +13,11 @@ def softmax(predictions):
       probs, np array of the same shape as predictions -
         probability for every class, 0..1
     '''
-    # TODO implement softmax
     # Your final implementation shouldn't have any loops
-    raise Exception("Not implemented!")
+    predictions = predictions - np.max(predictions, axis=-1)
+
+    exp_preds = np.exp(predictions)
+    return exp_preds / np.sum(exp_preds, axis=-1)
 
 
 def cross_entropy_loss(probs, target_index):
@@ -33,7 +35,21 @@ def cross_entropy_loss(probs, target_index):
     '''
     # TODO implement cross-entropy
     # Your final implementation shouldn't have any loops
-    raise Exception("Not implemented!")
+    # a = tuple(enumerate(target_index))
+    # a =
+    # import pdb; pdb.set_trace()
+    # b = probs[a]
+    # c = -1 * np.sum(np.log(b))
+    if type(target_index) != np.array:
+        target_index = np.array([target_index])
+    if len(probs.shape) == 1:
+        probs = probs[np.newaxis, :]
+
+    return -1 * np.sum(
+        np.log(
+            probs[np.arange(target_index.shape[0]), target_index]
+        )
+    )
 
 
 def softmax_with_cross_entropy(predictions, target_index):
@@ -52,9 +68,29 @@ def softmax_with_cross_entropy(predictions, target_index):
       dprediction, np array same shape as predictions
         - gradient of predictions by loss value
     '''
-    # TODO implement softmax with cross-entropy
     # Your final implementation shouldn't have any loops
-    raise Exception("Not implemented!")
+    softmaxf = softmax(predictions)
+    loss = cross_entropy_loss(softmaxf, target_index)
+
+    # dprediction = 1 - (predictions.shape[-1] - 2) * softmaxf
+    # dprediction = predictions.shape[-1] * softmaxf - 1
+
+    if type(target_index) != np.array:
+        target_index = np.array([target_index])
+
+    do_flatten = True
+    if len(softmaxf.shape) == 1:
+        do_flatten = True
+        softmaxf = softmaxf[np.newaxis, :]
+
+    a = [np.arange(target_index.shape[0]), target_index]
+    dprediction = softmaxf.copy()
+
+    np.subtract.at(dprediction,
+                   a,
+                   1)
+    if do_flatten:
+        dprediction = dprediction.flatten()
 
     return loss, dprediction
 

@@ -3,6 +3,8 @@ matplotlib
 scipy
 
 jupyter
+jupyter_contrib_nbextensions
 jupytext
+notedown
 
 flake8
