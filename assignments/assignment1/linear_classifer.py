@@ -14,10 +14,11 @@ def softmax(predictions):
         probability for every class, 0..1
     '''
     # Your final implementation shouldn't have any loops
-    predictions = predictions - np.max(predictions, axis=-1)
+    # From every batch substact its maximum
+    predictions = (predictions.T - np.max(predictions, axis=-1)).T
 
     exp_preds = np.exp(predictions)
-    return exp_preds / np.sum(exp_preds, axis=-1)
+    return (exp_preds.T / np.sum(exp_preds, axis=-1)).T
 
 
 def cross_entropy_loss(probs, target_index):
@@ -35,21 +36,14 @@ def cross_entropy_loss(probs, target_index):
     '''
     # TODO implement cross-entropy
     # Your final implementation shouldn't have any loops
-    # a = tuple(enumerate(target_index))
-    # a =
-    # import pdb; pdb.set_trace()
-    # b = probs[a]
-    # c = -1 * np.sum(np.log(b))
-    if type(target_index) != np.array:
+    if type(target_index) != np.ndarray:
         target_index = np.array([target_index])
     if len(probs.shape) == 1:
         probs = probs[np.newaxis, :]
 
-    return -1 * np.sum(
-        np.log(
-            probs[np.arange(target_index.shape[0]), target_index]
-        )
-    )
+    return np.mean(-np.log(
+        probs[np.arange(target_index.shape[0]), target_index]
+    ))
 
 
 def softmax_with_cross_entropy(predictions, target_index):
@@ -72,23 +66,22 @@ def softmax_with_cross_entropy(predictions, target_index):
     softmaxf = softmax(predictions)
     loss = cross_entropy_loss(softmaxf, target_index)
 
-    # dprediction = 1 - (predictions.shape[-1] - 2) * softmaxf
-    # dprediction = predictions.shape[-1] * softmaxf - 1
-
-    if type(target_index) != np.array:
+    if type(target_index) != np.ndarray:
         target_index = np.array([target_index])
 
-    do_flatten = True
+    do_flatten = False
+
     if len(softmaxf.shape) == 1:
         do_flatten = True
         softmaxf = softmaxf[np.newaxis, :]
 
-    a = [np.arange(target_index.shape[0]), target_index]
+    num_samples = softmaxf.shape[0]
+
+    a = tuple([np.arange(target_index.shape[0]), target_index])
     dprediction = softmaxf.copy()
 
-    np.subtract.at(dprediction,
-                   a,
-                   1)
+    np.subtract.at(dprediction, a, 1)
+    dprediction /= num_samples
     if do_flatten:
         dprediction = dprediction.flatten()
 
