@@ -22,7 +22,12 @@ def check_gradient(f, x, delta=1e-5, tol=1e-4):
     analytic_grad = analytic_grad.copy()
     delta2 = delta * 2
 
-    assert analytic_grad.shape == x.shape
+    try:
+        assert analytic_grad.shape == x.shape
+    except Exception:
+        print('a_shape = %s, x_shape = %s' % (str(analytic_grad.shape),
+                                              str(x.shape)))
+        raise
 
     it = np.nditer(x, flags=['multi_index'], op_flags=['readwrite'])
     while not it.finished:
