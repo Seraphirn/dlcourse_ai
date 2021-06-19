@@ -38,6 +38,7 @@ def softmax(predictions):
     exp_preds = np.exp(predictions)
     return (exp_preds.T / np.sum(exp_preds, axis=-1)).T
 
+import math
 
 def cross_entropy_loss(probs, target_index):
     '''
@@ -59,9 +60,12 @@ def cross_entropy_loss(probs, target_index):
     if len(probs.shape) == 1:
         probs = probs[np.newaxis, :]
 
-    return np.mean(-np.log(
+    result = np.mean(-np.log(
         probs[np.arange(target_index.shape[0]), target_index]
     ))
+    if math.isinf(result):
+        raise Exception('loss is inf')
+    return result
 
 
 def softmax_with_cross_entropy(predictions, target_index):

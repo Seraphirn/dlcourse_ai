@@ -31,7 +31,6 @@ class TwoLayerNet:
         """
         Computes total loss and updates parameter gradients
         on a batch of training examples
-
         Arguments:
         X, np array (batch_size, input_features) - input data
         y, np array of int (batch_size) - classes
@@ -54,12 +53,12 @@ class TwoLayerNet:
         for layer in reversed(self.layers):
             grad = layer.backward(grad)
 
-        # for layer in self.layers:
-        #     for pname, param in layer.params().items():
-        #         if pname == 'W':
-        #             reg_loss, reg_dW = l2_regularization(param.value, self.reg)
-        #             loss += reg_loss
-        #             param.grad += reg_dW
+        for layer in self.layers:
+            for pname, param in layer.params().items():
+                if pname == 'W':
+                    reg_loss, reg_dW = l2_regularization(param.value, self.reg)
+                    loss += reg_loss
+                    param.grad += reg_dW
 
         return loss
 
