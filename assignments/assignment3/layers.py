@@ -222,15 +222,23 @@ class ConvolutionalLayer:
         self.B = Param(np.zeros(out_channels))
 
         self.padding = padding
-        self.stride = 1
+        self.stride = stride
 
     def forward(self, X):
         batch_size, width, height,  channels = X.shape
-        self.X = X
+
+        # some padding
+        if self.padding > 0:
+            self.X = np.zeros(shape=(batch_size, width + 2*self.padding,
+                                     height + 2*self.padding, channels))
+            self.X[:, self.padding:-self.padding,
+                   self.padding:-self.padding, :] = X
+        else:
+            self.X = X.copy()
 
         # left filter border
-        left_fb = (self.filter_size-1)//2
-        right_fb = self.filter_size//2
+        left_fb = (self.filter_size-1)//2 - self.padding
+        right_fb = self.filter_size//2 + self.padding
 
         out_height = (height - self.filter_size
                       + 2*self.padding) // self.stride + 1
@@ -248,8 +256,10 @@ class ConvolutionalLayer:
 
         for x in range(out_width):
             for y in range(out_height):
-                receptive_field = X[:, x-left_fb:x+right_fb+1,
-                                    y-left_fb:y+right_fb+1, :]
+                receptive_field = self.X[:, x-left_fb:x+right_fb+1,
+                                         y-left_fb:y+right_fb+1, :]
+                # if self.padding > 0:
+                #     import pdb; pdb.set_trace()
                 Y[:, x, y, :] = receptive_field.reshape((batch_size, -1)).dot(
                     self.W.value.reshape((-1, self.out_channels))
                 ) + self.B.value
@@ -262,19 +272,21 @@ class ConvolutionalLayer:
         # when you implemented FullyConnectedLayer
         # Just do it the same number of times and accumulate gradients
 
-        batch_size, height, width, channels = self.X.shape
+        batch_size, pheight, pwidth, channels = self.X.shape
+        height, width = pheight - 2*self.padding, pwidth - 2*self.padding
         _, out_height, out_width, out_channels = d_out.shape
 
         # left filter border
-        left_fb = (self.filter_size-1)//2
-        right_fb = self.filter_size//2
+        left_fb = (self.filter_size-1)//2 - self.padding
+        right_fb = self.filter_size//2 + self.padding
 
         # TODO: Implement backward pass
         # Same as forward, setup variables of the right shape that
         # aggregate input gradient and fill them for every location
         # of the output
 
-        grad = np.zeros(shape=self.X.shape)
+        grad = np.zeros(shape=(batch_size, height + 2*self.padding,
+                               width + 2*self.padding, channels))
 
         # Try to avoid having any other loops here too
         for y in range(out_height):
@@ -287,6 +299,7 @@ class ConvolutionalLayer:
                 tmp = d_out[:, x, y, :].dot(
                     self.W.value.reshape((-1, self.out_channels)).T
                 )
+
                 grad[:, x-left_fb:x+right_fb+1, y-left_fb:y+right_fb+1, :] +=\
                     tmp.reshape((batch_size, self.filter_size,
                                  self.filter_size, channels))
@@ -301,7 +314,12 @@ class ConvolutionalLayer:
                 self.B.grad += np.ones((1, batch_size))\
                     .dot(d_out[:, x, y, :])\
                     .reshape((self.out_channels))
-        return grad
+        if self.padding > 0:
+            result = grad[:, self.padding:-self.padding,
+                          self.padding:-self.padding, :]
+        else:
+            result = grad
+        return result
 
     def params(self):
         return {'W': self.W, 'B': self.B}

@@ -95,3 +95,12 @@ layer = ConvolutionalLayer(in_channels=2, out_channels=2, filter_size=2, padding
 assert check_layer_param_gradient(layer, X, 'W')
 layer = ConvolutionalLayer(in_channels=2, out_channels=2, filter_size=2, padding=0)
 assert check_layer_param_gradient(layer, X, 'B')
+
+layer = ConvolutionalLayer(in_channels=2, out_channels=2, filter_size=3, padding=1)
+result = layer.forward(X)
+# Note this kind of layer produces the same dimensions as input
+assert result.shape == X.shape,"Result shape: %s - Expected shape %s" % (result.shape, X.shape)
+d_input = layer.backward(np.ones_like(result))
+assert d_input.shape == X.shape
+layer = ConvolutionalLayer(in_channels=2, out_channels=2, filter_size=3, padding=1)
+assert check_layer_gradient(layer, X)
