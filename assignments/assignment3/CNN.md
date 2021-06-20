@@ -190,7 +190,7 @@ Max Pooling - это слой, реализующий операцию макс�
 Stride - это на сколько "пикселей" сдвигается окно на одном шаге.  
 Вот здесь, например, stride = 2
 
-![image.png](http://deeplearning.net/software/theano/_images/no_padding_strides.gif)
+![image](http://deeplearning.net/software/theano/_images/no_padding_strides.gif)
 
 На практике, для max pooling значение stride часто равно pool size.
 

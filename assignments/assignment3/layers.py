@@ -340,15 +340,73 @@ class MaxPoolingLayer:
 
     def forward(self, X):
         batch_size, height, width, channels = X.shape
-        # TODO: Implement maxpool forward pass
-        # Hint: Similarly to Conv layer, loop on
-        # output x/y dimension
-        raise Exception("Not implemented!")
+        self.X = X
+        # TODO add padding on large windows
+
+        left_fb = (self.pool_size-1)//2
+        right_fb = self.pool_size//2
+
+        out_height = (height - self.pool_size) // self.stride + 1
+        out_width = (width - self.pool_size) // self.stride + 1
+
+        Y = np.zeros(shape=(batch_size, out_width, out_height, channels))
+
+        # 2 is for x,y coordinates in origin X
+        self.args_max = np.zeros(shape=(batch_size, out_width,
+                                        out_height, channels, 2),
+                                 dtype=int)
+
+        for x in range(out_width):
+            left_x = self.stride*x - left_fb
+            right_x = self.stride*x + right_fb + 1
+            for y in range(out_height):
+
+                left_y = self.stride*y - left_fb
+                right_y = self.stride*y + right_fb + 1
+
+                receptive_field = self.X[:, left_x:right_x, left_y:right_y, :]
+                # if self.padding > 0:
+                #     import pdb; pdb.set_trace()
+                Y[:, x, y, :] = np.max(receptive_field, axis=(1, 2))
+
+                # saving args of max values in X field (not in receptive field)
+
+                # argmax cant do multidimentional axis so reshape all needed
+                # axis to 1 axis and calculate argmax on it
+                receptive_flat_indecies = np.argmax(
+                    receptive_field.reshape(batch_size, -1, channels),
+                    axis=1
+                )
+                # calculate origin 2d coodinates in receptive field from
+                # flat coordinates in receptive fields
+                receptive_x_indecies, receptive_y_indecies = np.unravel_index(
+                    receptive_flat_indecies, (self.pool_size, self.pool_size)
+                )
+                # calculate 2d coodinates in origin X
+                X_x_indices = receptive_x_indecies + left_x
+                X_y_indices = receptive_y_indecies + left_y
+                # 'zipping' to coodinates to 1x2 ndarrays
+                self.args_max[:, x, y, :] = np.dstack((X_x_indices,
+                                                       X_y_indices))
+        return Y
 
     def backward(self, d_out):
         # TODO: Implement maxpool backward pass
         batch_size, height, width, channels = self.X.shape
-        raise Exception("Not implemented!")
+        _, out_height, out_width, out_channels = d_out.shape
+
+        grad = np.zeros(shape=(batch_size, height, width, channels))
+
+        # Try to avoid having any other loops here too
+        for y in range(out_height):
+            for x in range(out_width):
+                args = self.args_max[:, x, y, :]
+                # a = d_out[:, x, y, :]
+                for b in range(batch_size):
+                    for c in range(channels):
+                        i, j = args[b, c]
+                        grad[b, i, j, c] = d_out[b, x, y, c]
+        return grad
 
     def params(self):
         return {}

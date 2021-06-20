@@ -104,3 +104,9 @@ d_input = layer.backward(np.ones_like(result))
 assert d_input.shape == X.shape
 layer = ConvolutionalLayer(in_channels=2, out_channels=2, filter_size=3, padding=1)
 assert check_layer_gradient(layer, X)
+
+pool = MaxPoolingLayer(2, 2)
+result = pool.forward(X)
+assert result.shape == (2, 1, 1, 2)
+
+assert check_layer_gradient(pool, X)
