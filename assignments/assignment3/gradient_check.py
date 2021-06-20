@@ -20,21 +20,31 @@ def check_gradient(f, x, delta=1e-5, tol=1e-4):
 
     fx, analytic_grad = f(x)
     analytic_grad = analytic_grad.copy()
+    delta2 = delta * 2
 
-    assert analytic_grad.shape == x.shape
+    try:
+        assert analytic_grad.shape == x.shape
+    except Exception:
+        print('a_shape = %s, x_shape = %s' % (str(analytic_grad.shape),
+                                              str(x.shape)))
+        raise
 
     it = np.nditer(x, flags=['multi_index'], op_flags=['readwrite'])
     while not it.finished:
         ix = it.multi_index
         analytic_grad_at_ix = analytic_grad[ix]
-        numeric_grad_at_ix = 0
 
-        # TODO Copy from previous assignment
-        raise Exception("Not implemented!")
+        tmp_x = x.copy()
+        np.add.at(tmp_x, (ix), delta)
+        tmp_fx = f(tmp_x)[0]
+        np.subtract.at(tmp_x, (ix), delta2)
+
+        numeric_grad_at_ix = (tmp_fx - f(tmp_x)[0]) / delta2
 
         if not np.isclose(numeric_grad_at_ix, analytic_grad_at_ix, tol):
-            print("Gradients are different at %s. Analytic: %2.5f, Numeric: %2.5f" % (
-                  ix, analytic_grad_at_ix, numeric_grad_at_ix))
+            print("Gradients are different at %s. "
+                  "Analytic: %2.5f, Numeric: %2.5f" % (ix, analytic_grad_at_ix,
+                                                       numeric_grad_at_ix))
             return False
 
         it.iternext()
@@ -133,5 +143,3 @@ def check_model_gradient(model, X, y,
 
         if not check_gradient(helper_func, initial_w, delta, tol):
             return False
-
-    return True
