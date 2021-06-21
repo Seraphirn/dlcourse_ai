@@ -201,7 +201,7 @@ class FullyConnectedLayer:
 
 class ConvolutionalLayer:
     def __init__(self, in_channels, out_channels,
-                 filter_size, padding, stride=1):
+                 filter_size, padding=0, stride=1):
         '''
         Initializes the layer
 
@@ -261,6 +261,7 @@ class ConvolutionalLayer:
                                          y-left_fb:y+right_fb+1, :]
                 # if self.padding > 0:
                 #     import pdb; pdb.set_trace()
+                # import pdb; pdb.set_trace()
                 Y[:, x, y, :] = receptive_field.reshape((batch_size, -1)).dot(
                     self.W.value.reshape((-1, self.out_channels))
                 ) + self.B.value
@@ -345,8 +346,8 @@ class MaxPoolingLayer:
         self.X = X
         # TODO add padding on large windows
 
-        left_fb = (self.pool_size-1)//2
-        right_fb = self.pool_size//2
+        # left_fb = (self.pool_size-1)//2
+        # right_fb = self.pool_size//2
 
         out_height = (height - self.pool_size) // self.stride + 1
         out_width = (width - self.pool_size) // self.stride + 1
@@ -359,12 +360,12 @@ class MaxPoolingLayer:
                                  dtype=int)
 
         for x in range(out_width):
-            left_x = self.stride*x - left_fb
-            right_x = self.stride*x + right_fb + 1
+            left_x = self.stride*x
+            right_x = self.stride*x + self.pool_size
             for y in range(out_height):
 
-                left_y = self.stride*y - left_fb
-                right_y = self.stride*y + right_fb + 1
+                left_y = self.stride*y
+                right_y = self.stride*y + self.pool_size
 
                 receptive_field = self.X[:, left_x:right_x, left_y:right_y, :]
                 # if self.padding > 0:
@@ -414,16 +415,11 @@ class Flattener:
         self.X_shape = None
 
     def forward(self, X):
-        batch_size, height, width, channels = X.shape
-
-        # TODO: Implement forward pass
-        # Layer should return array with dimensions
-        # [batch_size, hight*width*channels]
-        raise Exception("Not implemented!")
+        self.X_shape = batch_size, _, _, _ = X.shape
+        return X.reshape(batch_size, -1)
 
     def backward(self, d_out):
-        # TODO: Implement backward pass
-        raise Exception("Not implemented!")
+        return d_out.reshape(self.X_shape)
 
     def params(self):
         # No params!

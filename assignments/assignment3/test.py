@@ -27,86 +27,16 @@ train_X, test_X = prepare_for_neural_network(train_X, test_X)
 train_X, train_y, val_X, val_y = random_split_train_val(train_X, train_y,
                                                         num_val = 1000)
 
-X = np.array([
-              [
-               [[1.0], [2.0]],
-               [[0.0], [-1.0]]
-              ]
-              ,
-              [
-               [[0.0], [1.0]],
-               [[-2.0], [-1.0]]
-              ]
-             ])
+# TODO: In model.py, implement missed functions function for ConvNet model
 
-# Batch of 2 images of dimensions 2x2 with a single channel
-print("Shape of X:", X.shape)
+# No need to use L2 regularization
+# model = ConvNet(input_shape=(32, 32, 3), n_output_classes=10, conv1_channels=2, conv2_channels=2)
+# loss = model.compute_loss_and_gradients(train_X[:2], train_y[:2])
 
-layer = ConvolutionalLayer(in_channels=1, out_channels=1, filter_size=2,
-                           padding=0)
-print("Shape of W", layer.W.value.shape)
-layer.W.value = np.zeros_like(layer.W.value)
-layer.W.value[0, 0, 0, 0] = 1.0
-layer.B.value = np.ones_like(layer.B.value)
-result = layer.forward(X)
+# # TODO Now implement backward pass and aggregate all of the params
+# check_model_gradient(model, train_X[:2], train_y[:2])
+model = ConvNet(input_shape=(32,32,3), n_output_classes=10, conv1_channels=2, conv2_channels=2)
+dataset = Dataset(train_X[:16], train_y[:16], val_X[:16], val_y[:16])
+trainer = Trainer(model, dataset, SGD(), batch_size=16, learning_rate=1e-3)
 
-assert result.shape == (2, 1, 1, 1)
-assert np.all(result == X[:, :1, :1, :1] + 1), \
-    "result: %s, X: %s" % (result, X[:, :1, :1, :1])
-
-
-# Now let's implement multiple output channels
-layer = ConvolutionalLayer(in_channels=1, out_channels=2, filter_size=2,
-                           padding=0)
-result = layer.forward(X)
-assert result.shape == (2, 1, 1, 2)
-
-
-# And now multple input channels!
-X = np.array([
-              [
-               [[1.0, 0.0], [2.0, 1.0]],
-               [[0.0, -1.0], [-1.0, -2.0]]
-              ],
-              [
-               [[0.0, 1.0], [1.0, -1.0]],
-               [[-2.0, 2.0], [-1.0, 0.0]]
-              ]
-             ])
-
-print("Shape of X:", X.shape)
-layer = ConvolutionalLayer(in_channels=2, out_channels=2, filter_size=2,
-                           padding=0)
-result = layer.forward(X)
-assert result.shape == (2, 1, 1, 2)
-
-# First test - check the shape is right
-layer = ConvolutionalLayer(in_channels=2, out_channels=2, filter_size=2, padding=0)
-result = layer.forward(X)
-d_input = layer.backward(np.ones_like(result))
-assert d_input.shape == X.shape
-
-# Actually test the backward pass
-# As usual, you'll need to copy gradient check code from the previous assignment
-layer = ConvolutionalLayer(in_channels=2, out_channels=2, filter_size=2, padding=0)
-assert check_layer_gradient(layer, X)
-
-layer = ConvolutionalLayer(in_channels=2, out_channels=2, filter_size=2, padding=0)
-assert check_layer_param_gradient(layer, X, 'W')
-layer = ConvolutionalLayer(in_channels=2, out_channels=2, filter_size=2, padding=0)
-assert check_layer_param_gradient(layer, X, 'B')
-
-layer = ConvolutionalLayer(in_channels=2, out_channels=2, filter_size=3, padding=1)
-result = layer.forward(X)
-# Note this kind of layer produces the same dimensions as input
-assert result.shape == X.shape,"Result shape: %s - Expected shape %s" % (result.shape, X.shape)
-d_input = layer.backward(np.ones_like(result))
-assert d_input.shape == X.shape
-layer = ConvolutionalLayer(in_channels=2, out_channels=2, filter_size=3, padding=1)
-assert check_layer_gradient(layer, X)
-
-pool = MaxPoolingLayer(2, 2)
-result = pool.forward(X)
-assert result.shape == (2, 1, 1, 2)
-
-assert check_layer_gradient(pool, X)
+loss_history, train_history, val_history = trainer.fit()

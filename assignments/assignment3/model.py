@@ -15,7 +15,8 @@ class ConvNet:
     Conv[3x3] -> Relu -> MaxPool[4x4] ->
     Flatten -> FC -> Softmax
     """
-    def __init__(self, input_shape, n_output_classes, conv1_channels, conv2_channels):
+    def __init__(self, input_shape, n_output_classes, conv1_channels,
+                 conv2_channels):
         """
         Initializes the neural network
 
@@ -26,8 +27,29 @@ class ConvNet:
         conv1_channels, int - number of filters in the 1st conv layer
         conv2_channels, int - number of filters in the 2nd conv layer
         """
-        # TODO Create necessary layers
-        raise Exception("Not implemented!")
+
+        # self.reg = reg
+        # self.layer1 = FullyConnectedLayer(n_input, hidden_layer_size)
+        # self.layer2 = ReLULayer()
+        # self.layer3 = FullyConnectedLayer(hidden_layer_size, n_output)
+        width, height, channels = input_shape
+        n_input = conv2_channels * width * height // (16*16)
+        self.layers = [
+            ConvolutionalLayer(in_channels=channels,
+                               out_channels=conv1_channels,
+                               filter_size=3,
+                               padding=1),
+            ReLULayer(),
+            MaxPoolingLayer(pool_size=4, stride=4),
+            ConvolutionalLayer(in_channels=conv1_channels,
+                               out_channels=conv2_channels,
+                               filter_size=3,
+                               padding=1),
+            ReLULayer(),
+            MaxPoolingLayer(pool_size=4, stride=4),
+            Flattener(),
+            FullyConnectedLayer(n_input=n_input, n_output=n_output_classes)
+        ]
 
     def compute_loss_and_gradients(self, X, y):
         """
@@ -41,20 +63,44 @@ class ConvNet:
         # Before running forward and backward pass through the model,
         # clear parameter gradients aggregated from the previous pass
 
-        # TODO Compute loss and fill param gradients
-        # Don't worry about implementing L2 regularization, we will not
-        # need it in this assignment
-        raise Exception("Not implemented!")
+        for param in self.params().values():
+            param.grad = 0
+
+        layer_input = X
+
+        for layer in self.layers:
+            layer_output = layer.forward(layer_input)
+            layer_input = layer_output
+
+        predictions = layer_output
+
+        loss, dy = softmax_with_cross_entropy(predictions, y)
+
+        grad = dy
+
+        for layer in reversed(self.layers):
+            grad = layer.backward(grad)
+
+        return loss
 
     def predict(self, X):
-        # You can probably copy the code from previous assignment
-        raise Exception("Not implemented!")
+        layer_input = X
+
+        for layer in self.layers:
+            layer_output = layer.forward(layer_input)
+            layer_input = layer_output
+
+        predictions = layer_output
+
+        pred = np.argmax(predictions, axis=-1)
+
+        return pred
 
     def params(self):
         result = {}
 
-        # TODO: Aggregate all the params from all the layers
-        # which have parameters
-        raise Exception("Not implemented!")
+        for i, layer in enumerate(self.layers):
+            for pname, param in layer.params().items():
+                result[f'{i+1}-layer {pname}'] = param
 
         return result
