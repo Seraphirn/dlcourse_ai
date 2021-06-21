@@ -1,5 +1,6 @@
 import numpy as np
 import math
+from typing import Tuple
 
 
 def l2_regularization(W, reg_strength):
@@ -337,6 +338,7 @@ class MaxPoolingLayer:
         self.pool_size = pool_size
         self.stride = stride
         self.X = None
+        self._cache = {}
 
     def forward(self, X):
         batch_size, height, width, channels = X.shape
@@ -369,26 +371,18 @@ class MaxPoolingLayer:
                 #     import pdb; pdb.set_trace()
                 Y[:, x, y, :] = np.max(receptive_field, axis=(1, 2))
 
-                # saving args of max values in X field (not in receptive field)
-
-                # argmax cant do multidimentional axis so reshape all needed
-                # axis to 1 axis and calculate argmax on it
-                receptive_flat_indecies = np.argmax(
-                    receptive_field.reshape(batch_size, -1, channels),
-                    axis=1
-                )
-                # calculate origin 2d coodinates in receptive field from
-                # flat coordinates in receptive fields
-                receptive_x_indecies, receptive_y_indecies = np.unravel_index(
-                    receptive_flat_indecies, (self.pool_size, self.pool_size)
-                )
-                # calculate 2d coodinates in origin X
-                X_x_indices = receptive_x_indecies + left_x
-                X_y_indices = receptive_y_indecies + left_y
-                # 'zipping' to coodinates to 1x2 ndarrays
-                self.args_max[:, x, y, :] = np.dstack((X_x_indices,
-                                                       X_y_indices))
+                self._save_mask(x=receptive_field, cords=(x, y))
         return Y
+
+    def _save_mask(self, x: np.array, cords: Tuple[int, int]) -> None:
+        mask = np.zeros_like(x)
+        n, w, h, c = x.shape
+        x = x.reshape(n, h * w, c)
+        idx = np.argmax(x, axis=1)
+
+        n_idx, c_idx = np.indices((n, c))
+        mask.reshape(n, h * w, c)[n_idx, idx, c_idx] = 1
+        self._cache[cords] = mask
 
     def backward(self, d_out):
         # TODO: Implement maxpool backward pass
@@ -397,15 +391,18 @@ class MaxPoolingLayer:
 
         grad = np.zeros(shape=(batch_size, height, width, channels))
 
+        h_pool, w_pool = self.pool_size, self.pool_size
+
         # Try to avoid having any other loops here too
         for y in range(out_height):
             for x in range(out_width):
-                args = self.args_max[:, x, y, :]
-                # a = d_out[:, x, y, :]
-                for b in range(batch_size):
-                    for c in range(channels):
-                        i, j = args[b, c]
-                        grad[b, i, j, c] = d_out[b, x, y, c]
+                h_start = y * self.stride
+                h_end = h_start + h_pool
+                w_start = x * self.stride
+                w_end = w_start + w_pool
+                grad[:, w_start:w_end, h_start:h_end, :] += \
+                    d_out[:, x:x + 1, y:y + 1, :] \
+                    * self._cache[(x, y)]
         return grad
 
     def params(self):
